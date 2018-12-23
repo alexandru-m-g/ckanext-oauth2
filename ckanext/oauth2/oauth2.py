@@ -37,7 +37,7 @@ from requests_oauthlib import OAuth2Session
 import six
 
 import constants
-
+from ckanext.hdx_users.helpers.user_extra import get_initial_extras
 
 log = logging.getLogger(__name__)
 
@@ -159,13 +159,15 @@ class OAuth2Helper(object):
             if len(users) == 1:
                 user = users[0]
 
+            new_user = False
             # If the user does not exist, we have to create it...
             if user is None:
                 user = model.User(email=email)
+                new_user = True
 
-            # Now we update his/her user_name with the one provided by the OAuth2 service
-            # In the future, users will be obtained based on this field
-            user.name = user_name
+                # Now we update his/her user_name with the one provided by the OAuth2 service
+                # In the future, users will be obtained based on this field
+                user.name = user_name
 
             # Update fullname
             if self.profile_api_fullname_field != "" and self.profile_api_fullname_field in user_data:
@@ -179,6 +181,11 @@ class OAuth2Helper(object):
             model.Session.add(user)
             model.Session.commit()
             model.Session.remove()
+
+            if new_user:
+                context = {'model': model, 'session': model.Session, 'ignore_auth': True}
+                user_extra = toolkit.get_action('user_extra_create')(context, {'user_id': user.id,
+                                                                           'extras': get_initial_extras()})
 
             return user.name
 
