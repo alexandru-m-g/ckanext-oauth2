@@ -59,7 +59,8 @@ class OAuth2Controller(base.BaseController):
             user_name = self.oauth2helper.identify(token)
             self.oauth2helper.remember(user_name)
             self.oauth2helper.update_token(user_name, token)
-            self.oauth2helper.redirect_from_callback()
+            # self.oauth2helper.redirect_from_callback()
+            return base.render('oauth/after_login.html')
         except Exception as e:
 
             session.save()
