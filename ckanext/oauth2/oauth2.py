@@ -76,6 +76,8 @@ class OAuth2Helper(object):
         self.sysadmin_group_name = six.text_type(os.environ.get('CKAN_OAUTH2_SYSADMIN_GROUP_NAME', toolkit.config.get('ckan.oauth2.sysadmin_group_name', ''))).strip()
 
         self.redirect_uri = urljoin(urljoin(toolkit.config.get('ckan.site_url', 'http://localhost:5000'), toolkit.config.get('ckan.root_path')), constants.REDIRECT_URL)
+        if not 'https' in self.redirect_uri and toolkit.config.get('hdx.oauth2.force_https', 'false') == 'true':
+            self.redirect_uri = self.redirect_uri.replace('http://', 'https://')
 
         # Init db
         db.init_db(model)
