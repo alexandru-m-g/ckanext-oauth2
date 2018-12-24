@@ -76,8 +76,10 @@ class OAuth2Helper(object):
         self.sysadmin_group_name = six.text_type(os.environ.get('CKAN_OAUTH2_SYSADMIN_GROUP_NAME', toolkit.config.get('ckan.oauth2.sysadmin_group_name', ''))).strip()
 
         self.redirect_uri = urljoin(urljoin(toolkit.config.get('ckan.site_url', 'http://localhost:5000'), toolkit.config.get('ckan.root_path')), constants.REDIRECT_URL)
-        if not 'https' in self.redirect_uri and toolkit.config.get('hdx.oauth2.force_https', 'false') == 'true':
-            self.redirect_uri = self.redirect_uri.replace('http://', 'https://')
+        self.force_https = toolkit.config.get('hdx.oauth2.force_https', 'false') == 'true'
+
+        self.redirect_uri = self.redirect_uri.replace('http://', 'https://') if self.force_https \
+            else self.redirect_uri
 
         # Init db
         db.init_db(model)
@@ -113,10 +115,13 @@ class OAuth2Helper(object):
             )
 
         try:
+            auth_response = toolkit.request.url.replace('http://', 'https://') if self.force_https \
+                else toolkit.request.url
+
             token = oauth.fetch_token(self.token_endpoint,
                                       headers=headers,
                                       client_secret=self.client_secret,
-                                      authorization_response=toolkit.request.url,
+                                      authorization_response=auth_response,
                                       verify=self.verify_https)
         except requests.exceptions.SSLError as e:
             # TODO search a better way to detect invalid certificates
